@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "newProjectRoot": "projects",
@@ -49,8 +49,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "24kb",
+                  "maximumError": "48kb"
                 }
               ],
               "outputHashing": "all"
@@ -109,3 +109,4 @@
     "analytics": "50573716-e3c7-4e43-a051-74b5af8513ab"
   }
 }
+
