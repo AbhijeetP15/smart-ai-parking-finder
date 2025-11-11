@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: smart-parking-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: CORS_ORIGIN
+        value: https://YOUR-FRONTEND.vercel.app
+      - key: MONGODB_URI
+        sync: false

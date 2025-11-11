@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "frontend/package.json", "use": "@vercel/static-build", "config": { "distDir": "dist/smart-parking-frontend" } }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/frontend/dist/smart-parking-frontend/index.html" }
+  ]
+}
+

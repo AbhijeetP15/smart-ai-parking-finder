@@ -1,0 +1,241 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1>🅿️ Smart Parking Finder</h1>
+        <span class="connection-badge" [class.connected]="isConnected" [class.disconnected]="!isConnected">
+          {{ isConnected ? '● Live' : '● Offline' }}
+        </span>
+      </div>
+      <p class="subtitle">Real-time parking availability with AI-powered predictions</p>
+    </div>
+  </header>
+
+  <div *ngIf="error" class="error-banner">
+    <i class="icon-alert"></i>
+    <span>{{ error }}</span>
+    <button (click)="refreshData()" class="retry-btn">Retry</button>
+  </div>
+
+  <section class="stats-section" *ngIf="stats">
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <i class="icon-car"></i>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Total Available</p>
+        <p class="stat-value">{{ stats.totalAvailable }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <i class="icon-map"></i>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Parking Lots</p>
+        <p class="stat-value">{{ stats.totalParkingLots }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon purple">
+        <i class="icon-trending"></i>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Avg Occupancy</p>
+        <p class="stat-value">{{ stats.avgOccupancy }}%</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="filters-section">
+    <!-- Row 1: Availability and Radius Filters -->
+    <div class="filter-row">
+      <!-- Availability Filter -->
+      <div class="filter-group">
+        <div class="filter-label">
+          <i class="icon-car"></i>
+          <span>Availability</span>
+        </div>
+        <div class="filter-buttons">
+          <button
+            class="filter-btn"
+            [class.active]="filterType === 'all'"
+            (click)="setFilter('all')">
+            All Lots
+          </button>
+          <button
+            class="filter-btn green"
+            [class.active]="filterType === 'available'"
+            (click)="setFilter('available')">
+            Available
+          </button>
+          <button
+            class="filter-btn yellow"
+            [class.active]="filterType === 'moderate'"
+            (click)="setFilter('moderate')">
+            Moderate
+          </button>
+          <button
+            class="filter-btn red"
+            [class.active]="filterType === 'full'"
+            (click)="setFilter('full')">
+            Full
+          </button>
+        </div>
+        <!-- Move Use My Location beside availability buttons -->
+        <button
+          class="location-btn location-btn--inline"
+          [class.active]="locationEnabled"
+          (click)="requestLocation()"
+          [disabled]="isGettingLocation">
+          <i class="icon-map-pin"></i>
+          {{ isGettingLocation ? 'Getting Location...' : (locationEnabled ? 'Location Active' : 'Use My Location') }}
+        </button>
+      </div>
+
+      <!-- Radius Filter -->
+      <div class="filter-group">
+        <div class="filter-label">
+          <i class="icon-target"></i>
+          <span>Distance Radius</span>
+        </div>
+
+        <!-- NEW row that places slider (left) + location button (right) -->
+        <div class="distance-row">
+          <!-- LEFT: slider + value -->
+          <div class="radius-slider-container">
+            <div class="slider-controls">
+              <div class="slider-wrapper">
+                <input
+                  type="range"
+                  class="radius-slider"
+                  min="0"
+                  max="25"
+                  step="0.5"
+                  [value]="radiusFilter || 25"
+                  (input)="onRadiusSliderChange($event)"
+                  (change)="onRadiusSliderChange($event)">
+                <div class="slider-track-fill" [style.width.%]="getSliderPercentage()"></div>
+              </div>
+
+              <div class="slider-value">
+                <span class="value-number">{{ radiusFilter || 25 }}</span>
+                <span class="value-unit">{{ (radiusFilter || 25) === 1 ? 'mile' : 'miles' }}</span>
+              </div>
+            </div>
+
+            <div class="slider-labels">
+              <span>0 mi</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="radius-info" *ngIf="radiusFilter && radiusFilter < 25">
+          <i class="icon-lightbulb"></i>
+          <span>Showing parking lots within {{ radiusFilter }} {{ radiusFilter === 1 ? 'mile' : 'miles' }} of your location</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Search -->
+    <div class="filter-row">
+      <div class="search-section">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="🔍 Search parking lots by name or address..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange($event)">
+        <button
+          class="refresh-btn"
+          (click)="refreshData()"
+          [disabled]="isLoading">
+          <i class="icon-refresh"></i>
+          {{ isLoading ? 'Refreshing...' : 'Refresh' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <span #detailsTop></span>
+
+  <!-- Selected lot quick details -->
+  <section class="details-panel" *ngIf="selectedLot as lot">
+    <div class="panel-header">
+      <h2>{{ lot.name }}</h2>
+      <span [ngClass]="['status-badge', getStatusColor(lot)]">
+        {{ getStatusText(lot) }}
+      </span>
+    </div>
+    <div class="panel-body lot-details">
+      <span>{{ lot.availableSpots }}/{{ lot.totalSpots }} available</span>
+      <span *ngIf="lot.distance !== undefined">{{ lot.distance | number:'1.1-1' }} mi away</span>
+      <span>Predicted: 30m</span>
+      <span>Confidence: {{ lot.confidence }}%</span>
+    </div>
+    <div class="actions">
+      <button class="action-btn primary" (click)="getDirections(lot)">Get Directions</button>
+      <button class="action-btn secondary" (click)="openInMaps(lot)">Open in Maps</button>
+      <a class="action-btn" [routerLink]="['/parking', lot.id]">Full Details</a>
+    </div>
+  </section>
+
+  <!-- Parking lots grid -->
+  <section class="parking-grid" *ngIf="filteredLots.length > 0; else noLots">
+    <div class="parking-card" *ngFor="let lot of filteredLots" (click)="selectLot(lot)" [class.selected]="selectedLot?.id === lot.id">
+      <div class="distance-badge" *ngIf="lot.distance !== undefined">
+        <i class="icon-navigation"></i>
+        {{ lot.distance | number:'1.1-1' }} mi
+      </div>
+      <div class="card-header">
+        <div class="lot-info">
+          <h3 class="lot-name">{{ lot.name }}</h3>
+          <span [ngClass]="['status-badge', getStatusColor(lot)]">{{ getStatusText(lot) }}</span>
+        </div>
+        <div class="lot-details">
+          <span>{{ lot.availableSpots }}/{{ lot.totalSpots }} free</span>
+          <span class="last-update">Updated: {{ lot.lastUpdate | date:'shortTime' }}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="availability-section">
+          <div class="availability-item">
+            <i class="icon-trending"></i>
+            <div>
+              <div class="small-label">Predicted in</div>
+              <div class="big-number">30m</div>
+            </div>
+          </div>
+          <div class="availability-item">
+            <i class="icon-shield"></i>
+            <div>
+              <div class="small-label">Confidence</div>
+              <div class="big-number">{{ lot.confidence }}%</div>
+            </div>
+          </div>
+        </div>
+        <a [routerLink]="['/parking', lot.id]" class="view-btn">View details</a>
+      </div>
+    </div>
+  </section>
+
+  <ng-template #noLots>
+    <div class="empty-state">
+      No parking lots match your filters. Try widening the radius or clearing search.
+    </div>
+  </ng-template>
+
+  
+
+  <section class="info-banner">
+    <h3>🚀 AI-Powered Predictions</h3>
+    <p>
+      Our system uses machine learning to analyze historical patterns, current occupancy,
+      time of day, and day of week to predict parking availability with 92% accuracy.
+      Data updates in real-time every 30 seconds.
+    </p>
+  </section>
+</div>
+

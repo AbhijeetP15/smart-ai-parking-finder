@@ -1,0 +1,119 @@
+<div class="detail-container">
+  
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading parking lot details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-state">
+    <p>{{ error }}</p>
+    <button (click)="goBack()" class="back-btn">← Back to Dashboard</button>
+  </div>
+
+  <!-- Parking Lot Details -->
+  <div *ngIf="lot && !isLoading" class="detail-content">
+    
+    <!-- Header -->
+    <div class="detail-header">
+      <button (click)="goBack()" class="back-btn">
+        <span>←</span> Back
+      </button>
+      <h1>{{ lot.name }}</h1>
+      <span class="status-badge" [class]="getStatusColor()">
+        {{ getStatusLabel() }}
+      </span>
+    </div>
+
+    <!-- Main Info Cards -->
+    <div class="info-grid">
+      
+      <!-- Current Availability -->
+      <div class="info-card highlight">
+        <div class="card-icon">🚗</div>
+        <div class="card-content">
+          <h2>{{ lot.availableSpots }}</h2>
+          <p>Available Now</p>
+        </div>
+      </div>
+
+      <!-- Predicted Availability -->
+      <div class="info-card">
+        <div class="card-icon">🕐</div>
+        <div class="card-content">
+          <h2>{{ lot.predictedAvailability }}</h2>
+          <p>In 30 Minutes</p>
+        </div>
+      </div>
+
+      <!-- Total Capacity -->
+      <div class="info-card">
+        <div class="card-icon">🅿️</div>
+        <div class="card-content">
+          <h2>{{ lot.totalSpots }}</h2>
+          <p>Total Capacity</p>
+        </div>
+      </div>
+
+      <!-- Occupancy Rate -->
+      <div class="info-card">
+        <div class="card-icon">📊</div>
+        <div class="card-content">
+          <h2>{{ getOccupancyRate().toFixed(1) }}%</h2>
+          <p>Occupancy Rate</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Prediction Info -->
+    <div class="prediction-section">
+      <h3>🔮 AI-Powered Prediction</h3>
+      <p class="prediction-text">{{ getTrendMessage() }}</p>
+      <div class="confidence-badge">
+        <span>📈 {{ lot.confidence }}% Confidence</span>
+      </div>
+    </div>
+
+    <!-- Visual Progress Bar -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <span>Occupied: {{ lot.totalSpots - lot.availableSpots }} spots</span>
+        <span>Available: {{ lot.availableSpots }} spots</span>
+      </div>
+      <div class="progress-bar-large">
+        <div 
+          class="progress-fill" 
+          [class]="getStatusColor()"
+          [style.width.%]="getOccupancyRate()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Location & Actions -->
+    <div class="action-section">
+      <h3>📍 Location & Navigation</h3>
+      <div class="action-buttons">
+        <button (click)="getDirections()" class="action-btn primary">
+          <span>🧭</span>
+          Get Directions
+        </button>
+        <button (click)="openInMaps()" class="action-btn secondary">
+          <span>🗺️</span>
+          View on Map
+        </button>
+      </div>
+      <p class="coordinates">
+        Coordinates: {{ lot.location.lat.toFixed(4) }}, {{ lot.location.lng.toFixed(4) }}
+      </p>
+    </div>
+
+    <!-- Last Updated -->
+    <div class="update-info">
+      <p>Last updated: {{ lot.lastUpdate | date:'short' }}</p>
+    </div>
+
+  </div>
+
+</div>
